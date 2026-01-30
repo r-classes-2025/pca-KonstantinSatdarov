@@ -7,15 +7,21 @@ library(factoextra)
 
 # 1. отберите 6 главных персонажей (по количеству реплик)
 # сохраните как символьный вектор
-top_speakers <- friends |> 
-  # ваш код здесь
+top_speakers <- friends |>
+  count(speaker, sort = TRUE) |>
+  head(6) |>
+  pull(speaker)
   
 # 2. отфильтруйте топ-спикеров, 
 # токенизируйте их реплики, удалите из них цифры
 # столбец с токенами должен называться word
 # оставьте только столбцы speaker, word
-friends_tokens <- friends |> 
-  # ваш код здесь
+friends_tokens <- friends |>
+  filter(speaker %in% top_speakers) |>
+  unnest_tokens(input = 'text', output = 'word', token = 'words') |>
+  mutate(word = str_remove_all(word, '\\d+')) |>
+  filter(word != "") |>
+  select(speaker, word)
 
 # 3. отберите по 500 самых частотных слов для каждого персонажа
 # посчитайте относительные частотности для слов
