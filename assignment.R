@@ -20,37 +20,51 @@ friends_tokens <- friends |>
   filter(speaker %in% top_speakers) |>
   unnest_tokens(input = 'text', output = 'word', token = 'words') |>
   mutate(word = str_remove_all(word, '\\d+')) |>
-  filter(word != "") |>
+  filter(word != '') |>
   select(speaker, word)
 
 # 3. отберите по 500 самых частотных слов для каждого персонажа
 # посчитайте относительные частотности для слов
 friends_tf <- friends_tokens |>
-  # ваш код здесь
+  count(speaker, word, sort = TRUE) |>
+  arrange(speaker) |>
+  group_by(speaker) |>
+  mutate(tf = (n / sum(n))) |>
+  slice_head(n = 500) |>
+  ungroup() |>
+  select(speaker, word, tf)
 
 # 4. преобразуйте в широкий формат; 
 # столбец c именем спикера превратите в имя ряда, используя подходящую функцию 
-friends_tf_wide <- friends_tf |> 
-  # ваш код здесь
+friends_tf_wide <- friends_tf |>
+  pivot_wider(names_from = word, values_from = tf, values_fill = 0) |>
+  column_to_rownames(var = 'speaker')
 
 # 5. установите зерно 123
 # проведите кластеризацию k-means (k = 3) на относительных значениях частотности (nstart = 20)
 # используйте scale()
-
-# ваш код здесь
-km.out <- # ваш код здесь
-
+set.seed(123)
+km.out <- kmeans(scale(friends_tf_wide), centers = 3, nstart = 20)
+#эх, жаль нельзя написать 'centREs = 3', как с 'coloUr'
 
 # 6. примените к матрице метод главных компонент (prcomp)
 # центрируйте и стандартизируйте, использовав аргументы функции
-pca_fit <- # ваш код здесь
+pca_fit <- prcomp(friends_tf_wide, center = TRUE, scale. = TRUE)
 
 # 7. Покажите наблюдения и переменные вместе (биплот)
-# в качестве геома используйте текст (=имя персонажа)
+# в качестве геома используйте текст (= имя персонажа)
 # цветом закодируйте кластер, выделенный при помощи k-means
 # отберите 20 наиболее значимых переменных (по косинусу, см. документацию к функции)
 # сохраните график как переменную q
 
-q <- # ваш код здесь
+q <- fviz_pca_biplot(pca_fit,  
+                     geom = c('text'),
+                     select.var = list(cos2 = 20),
+                     habillage = as.factor(km.out$cluster),
+                     col.var = 'cyan4',
+                     alpha.var = 0.3,
+                     repel = FALSE,
+                     ggtheme = theme_minimal()) +
+  theme(legend.position = 'none')
 
 
